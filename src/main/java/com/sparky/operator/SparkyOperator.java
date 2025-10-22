@@ -3,12 +3,9 @@ package com.sparky.operator;
 import com.sparky.operator.controller.SpringBootAppController;
 import com.sparky.operator.crd.SpringBootApp;
 import io.fabric8.kubernetes.client.*;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.SharedInformerFactory;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,17 +71,10 @@ public class SparkyOperator {
      * регистрирует информер для SpringBootApp
      */
     private void registerInformer() {
-        // отримуємо клієнт для нашого кастомного ресурсу
-        // get client for our custom resource
-        // получаем клиент для нашего кастомного ресурса
-        MixedOperation<SpringBootApp, KubernetesResourceList<SpringBootApp>, Resource<SpringBootApp>> springBootAppClient = 
-            client.resources(SpringBootApp.class);
-        
         // створюємо інформер
         // create informer
         // создаем информер
         SharedIndexInformer<SpringBootApp> informer = informerFactory.sharedIndexInformerFor(
-            springBootAppClient,
             SpringBootApp.class,
             30 * 1000L // резинхронізація кожні 30 секунд / resync every 30 seconds / ресинхронизация каждые 30 секунд
         );
