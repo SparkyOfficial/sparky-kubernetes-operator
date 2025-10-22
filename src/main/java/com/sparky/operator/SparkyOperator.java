@@ -1,5 +1,7 @@
 package com.sparky.operator;
 
+import com.sparky.operator.controller.SpringBootAppController;
+import com.sparky.operator.crd.SpringBootApp;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -12,12 +14,15 @@ import org.slf4j.LoggerFactory;
  * основний клас оператора - тут вся магія відбувається
  * main operator class - here all the magic happens
  * основной класс оператора - здесь вся магия происходит
+ * 
+ * @author Андрій Будильников
  */
 public class SparkyOperator {
     private static final Logger logger = LoggerFactory.getLogger(SparkyOperator.class);
     
     private final KubernetesClient client;
     private final SharedInformerFactory informerFactory;
+    private final SpringBootAppController controller;
     
     public SparkyOperator() {
         // ініціалізуємо клієнт кубернетеса
@@ -25,6 +30,7 @@ public class SparkyOperator {
         // инициализируем клиент кубернетеса
         this.client = new DefaultKubernetesClient();
         this.informerFactory = client.informers();
+        this.controller = new SpringBootAppController(client);
     }
     
     /**
@@ -40,9 +46,7 @@ public class SparkyOperator {
         // реєструємо інформери для наших кастомних ресурсів
         // register informers for our custom resources
         // регистрируем информеры для наших кастомных ресурсов
-        // TODO: реалізувати реєстрацію інформерів для CRD
-        // TODO: implement registration of informers for CRD
-        // TODO: реализовать регистрацию информеров для CRD
+        registerInformer();
         
         // запускаємо інформери
         // start informers
@@ -60,6 +64,37 @@ public class SparkyOperator {
             logger.error("оператор прерван", e); // operator interrupted
             Thread.currentThread().interrupt();
         }
+    }
+    
+    /**
+     * реєструє інформер для SpringBootApp
+     * registers informer for SpringBootApp
+     * регистрирует информер для SpringBootApp
+     */
+    private void registerInformer() {
+        // отримуємо клієнт для нашого кастомного ресурсу
+        // get client for our custom resource
+        // получаем клиент для нашего кастомного ресурса
+        MixedOperation<SpringBootApp, KubernetesResourceList<SpringBootApp>, Resource<SpringBootApp>> springBootAppClient = 
+            client.resources(SpringBootApp.class);
+        
+        // створюємо інформер
+        // create informer
+        // создаем информер
+        SharedIndexInformer<SpringBootApp> informer = informerFactory.sharedIndexInformerFor(
+            springBootAppClient,
+            SpringBootApp.class,
+            30 * 1000L // резинхронізація кожні 30 секунд / resync every 30 seconds / ресинхронизация каждые 30 секунд
+        );
+        
+        // додаємо обробники подій
+        // add event handlers
+        // добавляем обработчики событий
+        informer.addEventHandler(new SparkyOperatorEventHandler(controller));
+        
+        logger.info("інформер для SpringBootApp зареєстровано"); // informer for SpringBootApp registered
+        logger.info("інформер для SpringBootApp зареєстровано"); // informer for SpringBootApp registered
+        logger.info("инformer для SpringBootApp зарегистрирован"); // informer for SpringBootApp registered
     }
     
     /**
