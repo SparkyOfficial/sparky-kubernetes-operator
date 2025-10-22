@@ -40,7 +40,7 @@ public class DatabaseService extends BaseService {
         // initialize aws rds client
         // инициализируем aws rds клиент
         this.rdsClient = RdsClient.builder()
-                .region(Region.US_EAST_1) // TODO: зробити конфігурованим
+                .region(getAwsRegion()) // зробити конфігурованим / make configurable / сделать настраиваемым
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
         
@@ -48,6 +48,44 @@ public class DatabaseService extends BaseService {
         // initialize client for working with custom resources
         // инициализируем клиент для работы с кастомными ресурсами
         this.springBootAppClient = client.resources(SpringBootApp.class);
+    }
+    
+    /**
+     * отримує регіон aws з змінних середовища або використовує за замовчуванням
+     * gets aws region from environment variables or uses default
+     * получает регион aws из переменных среды или использует по умолчанию
+     */
+    private Region getAwsRegion() {
+        // спробуємо отримати регіон з змінної середовища
+        // try to get region from environment variable
+        // попробуем получить регион из переменной среды
+        String regionStr = System.getenv("AWS_REGION");
+        if (regionStr == null || regionStr.isEmpty()) {
+            regionStr = System.getenv("AWS_DEFAULT_REGION");
+        }
+        
+        // якщо не знайдено, використовуємо за замовчуванням
+        // if not found, use default
+        // если не найдено, используем по умолчанию
+        if (regionStr == null || regionStr.isEmpty()) {
+            logger.info("регіон aws не вказано, використовується за замовчуванням: us-east-1");
+            logger.info("регион aws не указан, используется по умолчанию: us-east-1");
+            logger.info("aws region not specified, using default: us-east-1");
+            return Region.US_EAST_1;
+        }
+        
+        try {
+            Region region = Region.of(regionStr);
+            logger.info("використовується регіон aws: {}", regionStr);
+            logger.info("используется регион aws: {}", regionStr);
+            logger.info("using aws region: {}", regionStr);
+            return region;
+        } catch (Exception e) {
+            logger.warn("не вдалося розпізнати регіон aws: {}, використовується за замовчуванням: us-east-1", regionStr);
+            logger.warn("не удалось распознать регион aws: {}, используется по умолчанию: us-east-1", regionStr);
+            logger.warn("failed to recognize aws region: {}, using default: us-east-1", regionStr);
+            return Region.US_EAST_1;
+        }
     }
     
     /**
