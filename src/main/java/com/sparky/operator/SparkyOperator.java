@@ -5,8 +5,10 @@ import com.sparky.operator.crd.SpringBootApp;
 import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.SharedInformerFactory;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +127,43 @@ public class SparkyOperator {
             logger.error("критична помилка в операторі", e); // critical error in operator
             logger.error("критична помилка в операторі", e); // critical error in operator
             logger.error("критическая ошибка в операторе", e); // critical error in operator
+        }
+    }
+    
+    /**
+     * обробник подій для інформера
+     * event handler for informer
+     * обработчик событий для информера
+     */
+    private static class SparkyOperatorEventHandler implements ResourceEventHandler<SpringBootApp> {
+        private final SpringBootAppController controller;
+        
+        public SparkyOperatorEventHandler(SpringBootAppController controller) {
+            this.controller = controller;
+        }
+        
+        @Override
+        public void onAdd(SpringBootApp springBootApp) {
+            logger.info("додано новий ресурс SpringBootApp: {}", springBootApp.getMetadata().getName());
+            logger.info("додано новий ресурс SpringBootApp: {}", springBootApp.getMetadata().getName());
+            logger.info("добавлен новый ресурс SpringBootApp: {}", springBootApp.getMetadata().getName());
+            controller.reconcile(springBootApp);
+        }
+        
+        @Override
+        public void onUpdate(SpringBootApp oldSpringBootApp, SpringBootApp newSpringBootApp) {
+            logger.info("оновлено ресурс SpringBootApp: {}", newSpringBootApp.getMetadata().getName());
+            logger.info("оновлено ресурс SpringBootApp: {}", newSpringBootApp.getMetadata().getName());
+            logger.info("обновлен ресурс SpringBootApp: {}", newSpringBootApp.getMetadata().getName());
+            controller.reconcile(newSpringBootApp);
+        }
+        
+        @Override
+        public void onDelete(SpringBootApp springBootApp, boolean deletedFinalStateUnknown) {
+            logger.info("видалено ресурс SpringBootApp: {}", springBootApp.getMetadata().getName());
+            logger.info("видалено ресурс SpringBootApp: {}", springBootApp.getMetadata().getName());
+            logger.info("удален ресурс SpringBootApp: {}", springBootApp.getMetadata().getName());
+            controller.delete(springBootApp);
         }
     }
 }
