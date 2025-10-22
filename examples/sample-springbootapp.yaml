@@ -1,0 +1,24 @@
+apiVersion: sparky.com/v1
+kind: SpringBootApp
+metadata:
+  name: my-sample-app
+  namespace: default
+spec:
+  image: my-spring-boot-app:latest
+  ports:
+    http: 8080
+  replicas: 3
+  resources:
+    cpuRequest: "500m"
+    memoryRequest: "512Mi"
+    cpuLimit: "1000m"
+    memoryLimit: "1Gi"
+  database:
+    enabled: true
+    engine: aurora-mysql
+    instanceClass: db.t3.medium
+    allocatedStorage: 20
+    masterUsername: admin
+  monitoring:
+    enabled: true
+    grafanaDashboardTemplate: spring-boot-dashboard

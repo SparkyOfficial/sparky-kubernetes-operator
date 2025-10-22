@@ -1,0 +1,49 @@
+# Компіляція Java
+# Java compilation
+# Компиляция Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+
+# IDE
+# IDE files
+# Файлы IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+# ОС
+# OS files
+# Файлы ОС
+.DS_Store
+Thumbs.db
+
+# Docker
+# Docker files
+# Файлы Docker
+.dockerignore
+
+# Maven
+# Maven files
+# Файлы Maven
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+mvnw
+mvnw.cmd
+
+# Логи
+# Logs
+# Логи
+*.log
+
+# Тимчасові файли
+# Temporary files
+# Временные файлы
+tmp/
+temp/
