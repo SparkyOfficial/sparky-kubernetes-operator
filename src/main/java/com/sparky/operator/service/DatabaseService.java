@@ -2,7 +2,14 @@ package com.sparky.operator.service;
 
 import com.sparky.operator.crd.SpringBootApp;
 import com.sparky.operator.crd.SpringBootAppSpec;
+import com.sparky.operator.crd.SpringBootAppStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -10,17 +17,22 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.rds.RdsClient;
 import software.amazon.awssdk.services.rds.model.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * сервіс для роботи з aws rds базами даних
  * service for working with aws rds databases
  * сервис для работы с aws rds базами данных
+ * 
+ * @author Андрій Будильников
  */
 public class DatabaseService extends BaseService {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class);
     
     private final RdsClient rdsClient;
+    private final MixedOperation<SpringBootApp, KubernetesResourceList<SpringBootApp>, Resource<SpringBootApp>> springBootAppClient;
     
     public DatabaseService(KubernetesClient client) {
         super(client);
@@ -31,6 +43,11 @@ public class DatabaseService extends BaseService {
                 .region(Region.US_EAST_1) // TODO: зробити конфігурованим
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build();
+        
+        // ініціалізуємо клієнт для роботи з кастомними ресурсами
+        // initialize client for working with custom resources
+        // инициализируем клиент для работы с кастомными ресурсами
+        this.springBootAppClient = client.resources(SpringBootApp.class);
     }
     
     /**
@@ -169,12 +186,56 @@ public class DatabaseService extends BaseService {
      * обновляет статус приложения
      */
     private void updateAppStatus(SpringBootApp app, String databaseId, String endpoint) {
-        // TODO: реалізувати оновлення статусу кастомного ресурсу
-        // TODO: implement custom resource status update
-        // TODO: реализовать обновление статуса кастомного ресурса
-        logger.info("оновлення статусу аплікації: dbId={}, endpoint={}", databaseId, endpoint);
-        logger.info("оновлення статусу аплікації: dbId={}, endpoint={}", databaseId, endpoint);
-        logger.info("обновление статуса приложения: dbId={}, endpoint={}", databaseId, endpoint);
+        // реалізувати оновлення статусу кастомного ресурсу
+        // implement custom resource status update
+        // реализовать обновление статуса кастомного ресурса
+        
+        try {
+            // отримуємо поточний стан аплікації
+            // get current application state
+            // получаем текущее состояние приложения
+            SpringBootApp currentApp = springBootAppClient
+                .inNamespace(app.getMetadata().getNamespace())
+                .withName(app.getMetadata().getName())
+                .get();
+            
+            if (currentApp != null) {
+                // створюємо або оновлюємо статус
+                // create or update status
+                // создаем или обновляем статус
+                SpringBootAppStatus status = currentApp.getStatus();
+                if (status == null) {
+                    status = new SpringBootAppStatus();
+                }
+                
+                // оновлюємо поля статусу
+                // update status fields
+                // обновляем поля статуса
+                status.setDatabaseId(databaseId);
+                status.setDatabaseEndpoint(endpoint);
+                status.setPhase(endpoint != null ? "DatabaseReady" : "DatabaseCreating");
+                status.setMessage(endpoint != null ? 
+                    "Database " + databaseId + " is ready at " + endpoint : 
+                    "Database " + databaseId + " creation initiated");
+                
+                // оновлюємо ресурс в кластері
+                // update resource in cluster
+                // обновляем ресурс в кластере
+                currentApp.setStatus(status);
+                springBootAppClient
+                    .inNamespace(app.getMetadata().getNamespace())
+                    .withName(app.getMetadata().getName())
+                    .createOrReplace(currentApp);
+                
+                logger.info("статус аплікації оновлено: dbId={}, endpoint={}", databaseId, endpoint);
+                logger.info("статус аплікації оновлено: dbId={}, endpoint={}", databaseId, endpoint);
+                logger.info("статус приложения обновлен: dbId={}, endpoint={}", databaseId, endpoint);
+            }
+        } catch (Exception e) {
+            logger.error("помилка під час оновлення статусу аплікації", e);
+            logger.error("помилка під час оновлення статусу аплікації", e);
+            logger.error("ошибка во время обновления статуса приложения", e);
+        }
     }
     
     /**
